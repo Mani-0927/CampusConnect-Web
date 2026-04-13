@@ -18,6 +18,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/events', require('./routes/eventRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '../frontend')));

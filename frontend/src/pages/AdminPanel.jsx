@@ -21,6 +21,37 @@ export default function AdminPanel() {
     const [editEventId, setEditEventId] = useState(null);
     const [showReport, setShowReport] = useState(false);
 
+    // User management state
+    const [showUserMgmt, setShowUserMgmt] = useState(false);
+    const [adminVerified, setAdminVerified] = useState(false);
+    const [usersList, setUsersList] = useState([]);
+    const [adminPassInput, setAdminPassInput] = useState('');
+    const [passError, setPassError] = useState('');
+    const [passLoading, setPassLoading] = useState(false);
+
+    const toggleUserMgmt = () => {
+        setShowUserMgmt(!showUserMgmt);
+        if(!showUserMgmt) {
+            setShowForm(false);
+            setShowReport(false);
+        }
+    };
+
+    const handleVerifyAdmin = async (e) => {
+        e.preventDefault();
+        setPassLoading(true);
+        setPassError('');
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            const { data } = await axios.post('/api/users/admin-fetch', { password: adminPassInput }, config);
+            setUsersList(data);
+            setAdminVerified(true);
+        } catch (error) {
+            setPassError(error.response?.data?.message || "Verification failed");
+        }
+        setPassLoading(false);
+    };
+
     const fetchEvents = async () => {
         try {
             const { data } = await axios.get('/api/events');
@@ -126,7 +157,9 @@ export default function AdminPanel() {
                             <div style={{ display: 'grid', gap: '0.75rem' }}>
                                 <button onClick={() => {
                                     setShowForm(!showForm);
-                                    if(showForm) {
+                                    if(!showForm) {
+                                        setShowUserMgmt(false);
+                                        setShowReport(false);
                                         setEditEventId(null);
                                         setTitle(''); setDescription(''); setDate(''); setLocation(''); setImageUrl(''); setCapacity('');
                                     }
@@ -134,10 +167,16 @@ export default function AdminPanel() {
                                     <span style={{ fontSize: '1.2rem', marginRight: '0.75rem' }}>{showForm ? '❌' : '✨'}</span>
                                     {showForm ? 'Cancel' : 'Create New Event'}
                                 </button>
-                                <button style={{ padding: '0.85rem 1rem', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 600, display: 'flex', alignItems: 'center' }} onClick={() => alert("User Management coming soon!")}>
+                                <button style={{ padding: '0.85rem 1rem', background: showUserMgmt ? '#e0e7ff' : '#f8fafc', color: showUserMgmt ? '#4338ca' : '#475569', border: '1px solid #e2e8f0', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 600, display: 'flex', alignItems: 'center' }} onClick={toggleUserMgmt}>
                                     <span style={{ fontSize: '1.2rem', marginRight: '0.75rem' }}>👥</span> Manage Users
                                 </button>
-                                <button onClick={() => setShowReport(!showReport)} style={{ padding: '0.85rem 1rem', background: showReport ? '#e0e7ff' : '#f8fafc', color: showReport ? '#4338ca' : '#475569', border: '1px solid #e2e8f0', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                                <button onClick={() => {
+                                    setShowReport(!showReport);
+                                    if(!showReport) {
+                                        setShowForm(false);
+                                        setShowUserMgmt(false);
+                                    }
+                                }} style={{ padding: '0.85rem 1rem', background: showReport ? '#e0e7ff' : '#f8fafc', color: showReport ? '#4338ca' : '#475569', border: '1px solid #e2e8f0', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
                                     <span style={{ fontSize: '1.2rem', marginRight: '0.75rem' }}>📊</span> Reports
                                 </button>
                             </div>
@@ -195,79 +234,130 @@ export default function AdminPanel() {
                     </div>
 
                     {/* Right Column: Data Table */}
-                    <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                        <h3 style={{ color: '#1e293b', marginBottom: '1.25rem', fontSize: '1.2rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            All Broadcasted Events
-                            <span style={{ fontSize: '0.75rem', background: '#e0e7ff', color: '#4338ca', padding: '0.25rem 0.75rem', borderRadius: '20px', fontWeight: 700 }}>{events.length}</span>
-                        </h3>
-                        
-                        {events.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '3rem 0', color: '#94a3b8' }}>
-                                <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '0.75rem' }}>📂</span>
-                                No events found.
-                            </div>
-                        ) : (
-                            <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', whiteSpace: 'nowrap' }}>
-                                    <thead>
-                                        <tr style={{ background: '#f8fafc', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Title</th>
-                                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Date</th>
-                                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Type</th>
-                                            <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {events.map((event, index) => (
-                                            <tr key={event._id} style={{ borderTop: '1px solid #f1f5f9', background: index % 2 === 0 ? 'white' : '#fcfcfd', transition: 'background 0.2s', fontSize: '0.9rem' }}>
-                                                <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 600 }}>
-                                                    {event.title}
-                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400 }}>{event.location}</div>
-                                                </td>
-                                                <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</td>
-                                                <td style={{ padding: '0.75rem 1rem' }}>
-                                                    <span style={{ padding: '0.2rem 0.6rem', borderRadius: '50px', fontSize: '0.7rem', fontWeight: 700, 
-                                                        background: event.type === 'Hackathon' ? '#e0f2fe' : event.type === 'Workshop' ? '#dcfce7' : '#f3e8ff',
-                                                        color: event.type === 'Hackathon' ? '#0284c7' : event.type === 'Workshop' ? '#16a34a' : '#9333ea',
-                                                        textTransform: 'uppercase'
-                                                    }}>
-                                                        {event.type}
-                                                    </span>
-                                                </td>
-                                                <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                                                    <button onClick={() => handleEditClick(event)} style={{ background: 'transparent', color: '#4f46e5', border: '1px solid transparent', padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', marginRight: '0.5rem' }} onMouseEnter={(e)=>e.target.style.background='#e0e7ff'} onMouseLeave={(e)=>e.target.style.background='transparent'}>
-                                                        Edit
-                                                    </button>
-                                                    <button onClick={() => handleDelete(event._id)} style={{ background: 'transparent', color: '#ef4444', border: '1px solid transparent', padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e)=>e.target.style.background='#fee2e2'} onMouseLeave={(e)=>e.target.style.background='transparent'}>
-                                                        Remove
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                        
-                        {/* Reports Section */}
-                        {showReport && (
-                            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', borderRadius: '16px', border: '1px solid #cbd5e1' }}>
-                                <h3 style={{ color: '#1e293b', marginBottom: '1rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center' }}><span style={{marginRight: '0.5rem'}}>📈</span> Quick Reports</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <div style={{ background: 'white', padding: '1rem', borderRadius: '10px', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#4f46e5' }}>{events.length}</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Total Events</div>
+                    {showUserMgmt ? (
+                        <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                            {!adminVerified ? (
+                                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                                    <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>Enter Admin Password</h3>
+                                    <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.9rem' }}>You must verify your identity to view sensitive user data.</p>
+                                    <form onSubmit={handleVerifyAdmin} style={{ maxWidth: '300px', margin: '0 auto' }}>
+                                        <input type="password" value={adminPassInput} onChange={(e) => setAdminPassInput(e.target.value)} placeholder="Your Admin Password" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '1rem', outline: 'none' }} required />
+                                        {passError && <div style={{ color: 'red', fontSize: '0.85rem', marginBottom: '1rem' }}>{passError}</div>}
+                                        <button type="submit" disabled={passLoading} style={{ width: '100%', padding: '0.75rem', background: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                                            {passLoading ? 'Verifying...' : 'Unlock User Data'}
+                                        </button>
+                                    </form>
+                                </div>
+                            ) : (
+                                <>
+                                    <h3 style={{ color: '#1e293b', marginBottom: '1.25rem', fontSize: '1.2rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        Registered Users
+                                        <span style={{ fontSize: '0.75rem', background: '#e0e7ff', color: '#4338ca', padding: '0.25rem 0.75rem', borderRadius: '20px', fontWeight: 700 }}>{usersList.length}</span>
+                                    </h3>
+                                    <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', whiteSpace: 'nowrap' }}>
+                                            <thead>
+                                                <tr style={{ background: '#f8fafc', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Name</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Identifier</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Role</th>
+                                                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Joined</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {usersList.map((usr, i) => (
+                                                    <tr key={usr._id} style={{ borderTop: '1px solid #f1f5f9', background: i % 2 === 0 ? 'white' : '#fcfcfd' }}>
+                                                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#0f172a' }}>{usr.name}</td>
+                                                        <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{usr.email || usr.mobile || 'N/A'}</td>
+                                                        <td style={{ padding: '0.75rem 1rem' }}>
+                                                            <span style={{ padding: '0.2rem 0.6rem', borderRadius: '50px', fontSize: '0.75rem', background: usr.role === 'admin' ? '#fee2e2' : '#e0f2fe', color: usr.role === 'admin' ? '#ef4444' : '#0284c7' }}>
+                                                                {usr.role.toUpperCase()}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{new Date(usr.createdAt).toLocaleDateString()}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div style={{ background: 'white', padding: '1rem', borderRadius: '10px', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#10b981' }}>
-                                            {events.reduce((acc, ev) => acc + (ev.registeredStudents?.length || 0), 0)}
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                            <h3 style={{ color: '#1e293b', marginBottom: '1.25rem', fontSize: '1.2rem', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                All Broadcasted Events
+                                <span style={{ fontSize: '0.75rem', background: '#e0e7ff', color: '#4338ca', padding: '0.25rem 0.75rem', borderRadius: '20px', fontWeight: 700 }}>{events.length}</span>
+                            </h3>
+                            
+                            {events.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '3rem 0', color: '#94a3b8' }}>
+                                    <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '0.75rem' }}>📂</span>
+                                    No events found.
+                                </div>
+                            ) : (
+                                <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', whiteSpace: 'nowrap' }}>
+                                        <thead>
+                                            <tr style={{ background: '#f8fafc', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Title</th>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Date</th>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Type</th>
+                                                <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {events.map((event, index) => (
+                                                <tr key={event._id} style={{ borderTop: '1px solid #f1f5f9', background: index % 2 === 0 ? 'white' : '#fcfcfd', transition: 'background 0.2s', fontSize: '0.9rem' }}>
+                                                    <td style={{ padding: '0.75rem 1rem', color: '#0f172a', fontWeight: 600 }}>
+                                                        {event.title}
+                                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400 }}>{event.location}</div>
+                                                    </td>
+                                                    <td style={{ padding: '0.75rem 1rem', color: '#64748b' }}>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</td>
+                                                    <td style={{ padding: '0.75rem 1rem' }}>
+                                                        <span style={{ padding: '0.2rem 0.6rem', borderRadius: '50px', fontSize: '0.7rem', fontWeight: 700, 
+                                                            background: event.type === 'Hackathon' ? '#e0f2fe' : event.type === 'Workshop' ? '#dcfce7' : '#f3e8ff',
+                                                            color: event.type === 'Hackathon' ? '#0284c7' : event.type === 'Workshop' ? '#16a34a' : '#9333ea',
+                                                            textTransform: 'uppercase'
+                                                        }}>
+                                                            {event.type}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                                                        <button onClick={() => handleEditClick(event)} style={{ background: 'transparent', color: '#4f46e5', border: '1px solid transparent', padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', marginRight: '0.5rem' }} onMouseEnter={(e)=>e.target.style.background='#e0e7ff'} onMouseLeave={(e)=>e.target.style.background='transparent'}>
+                                                            Edit
+                                                        </button>
+                                                        <button onClick={() => handleDelete(event._id)} style={{ background: 'transparent', color: '#ef4444', border: '1px solid transparent', padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e)=>e.target.style.background='#fee2e2'} onMouseLeave={(e)=>e.target.style.background='transparent'}>
+                                                            Remove
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                            
+                            {/* Reports Section */}
+                            {showReport && (
+                                <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', borderRadius: '16px', border: '1px solid #cbd5e1' }}>
+                                    <h3 style={{ color: '#1e293b', marginBottom: '1rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center' }}><span style={{marginRight: '0.5rem'}}>📈</span> Quick Reports</h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <div style={{ background: 'white', padding: '1rem', borderRadius: '10px', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#4f46e5' }}>{events.length}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Total Events</div>
                                         </div>
-                                        <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Total Registrations</div>
+                                        <div style={{ background: 'white', padding: '1rem', borderRadius: '10px', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#10b981' }}>
+                                                {events.reduce((acc, ev) => acc + (ev.registeredStudents?.length || 0), 0)}
+                                            </div>
+                                            <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Total Registrations</div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </main>
