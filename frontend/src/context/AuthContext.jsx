@@ -16,10 +16,10 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    const login = async (email, password) => {
+    const login = async (identifier, password) => {
         try {
             const config = { headers: { 'Content-Type': 'application/json' } };
-            const { data } = await axios.post('http://localhost:5000/api/auth/login', { email, password }, config);
+            const { data } = await axios.post('/api/auth/login', { identifier, password }, config);
             
             setUser(data);
             localStorage.setItem('user', JSON.stringify(data));
@@ -29,10 +29,10 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async (name, email, password) => {
+    const register = async (name, identifier, password, otp) => {
         try {
             const config = { headers: { 'Content-Type': 'application/json' } };
-            const { data } = await axios.post('http://localhost:5000/api/auth/register', { name, email, password }, config);
+            const { data } = await axios.post('/api/auth/register', { name, identifier, password, otp }, config);
             
             setUser(data);
             localStorage.setItem('user', JSON.stringify(data));

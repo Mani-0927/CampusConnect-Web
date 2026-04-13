@@ -11,7 +11,7 @@ export default function Hackathons() {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                const { data } = await axios.get('http://localhost:5000/api/events');
+                const { data } = await axios.get('/api/events');
                 // Filter specifically for hackathons
                 const onlyHacks = data.filter(e => e.type === 'Hackathon' || e.type === 'Competition');
                 setHackathons(onlyHacks);
@@ -34,7 +34,7 @@ export default function Hackathons() {
         setRegisteringId(eventId);
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.post(`http://localhost:5000/api/events/${eventId}/register`, {}, config);
+            await axios.post(`/api/events/${eventId}/register`, {}, config);
             alert('Successfully registered for the Hackathon!');
         } catch (error) {
             alert(error.response?.data?.message || 'Failed to register');

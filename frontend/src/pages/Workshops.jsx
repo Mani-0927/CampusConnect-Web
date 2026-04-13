@@ -11,7 +11,7 @@ export default function Workshops() {
     useEffect(() => {
         const fetchWorkshops = async () => {
             try {
-                const { data } = await axios.get('http://localhost:5000/api/events');
+                const { data } = await axios.get('/api/events');
                 const onlyWorkshops = data.filter(e => e.type === 'Workshop');
                 setWorkshops(onlyWorkshops);
                 setLoading(false);
@@ -31,7 +31,7 @@ export default function Workshops() {
         setRegisteringId(eventId);
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.post(`http://localhost:5000/api/events/${eventId}/register`, {}, config);
+            await axios.post(`/api/events/${eventId}/register`, {}, config);
             alert('Successfully registered for the workshop!');
         } catch (error) {
             alert(error.response?.data?.message || 'Failed to register');

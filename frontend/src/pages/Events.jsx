@@ -12,7 +12,7 @@ export default function Events() {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                const { data } = await axios.get('http://localhost:5000/api/events');
+                const { data } = await axios.get('/api/events');
                 setEvents(data);
                 setLoading(false);
             } catch (error) {
@@ -29,7 +29,7 @@ export default function Events() {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                const { data } = await axios.get('http://localhost:5000/api/events');
+                const { data } = await axios.get('/api/events');
                 setEvents(data);
                 setLoading(false);
             } catch (error) {
@@ -49,7 +49,7 @@ export default function Events() {
         setRegisteringId(eventId);
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.post(`http://localhost:5000/api/events/${eventId}/register`, {}, config);
+            await axios.post(`/api/events/${eventId}/register`, {}, config);
             alert('Congratulations! You have successfully registered.');
         } catch (error) {
             alert(error.response?.data?.message || 'Failed to register');

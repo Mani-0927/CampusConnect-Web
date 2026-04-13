@@ -5,7 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 export default function Login() {
     const navigate = useNavigate();
     const { login } = useContext(AuthContext);
-    const [email, setEmail] = useState('');
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
@@ -13,7 +13,7 @@ export default function Login() {
         e.preventDefault();
         setError('');
         try {
-            const user = await login(email, password);
+            const user = await login(identifier, password);
             if (user.role === 'admin') {
                 navigate('/admin');
             } else {
@@ -34,8 +34,8 @@ export default function Login() {
                 {error && <div style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
                 <form onSubmit={handleLogin}>
                     <div className="form-group">
-                        <label>Email Address</label>
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="form-control" placeholder="student@gla.ac.in" required />
+                        <label>Email or Mobile Number</label>
+                        <input type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="form-control" placeholder="student@gla.ac.in or 9876543210" required />
                     </div>
                     <div className="form-group">
                         <label>Password</label>

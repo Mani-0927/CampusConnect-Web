@@ -1,4 +1,86 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
 export default function Calendar() {
+    const [currentDate, setCurrentDate] = useState(new Date()); 
+    const [events, setEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                const { data } = await axios.get('/api/events');
+                setEvents(data);
+                setLoading(false);
+            } catch (error) {
+                console.error("Failed to fetch events", error);
+                setLoading(false);
+            }
+        };
+        fetchEvents();
+        // Fallback to today's date if you want standard behaviour: setCurrentDate(new Date()) 
+        // Using April 2026 to match seed data visually perfectly.
+    }, []);
+
+    const nextMonth = () => {
+        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    };
+
+    const prevMonth = () => {
+        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    };
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    // Filter upcoming events
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upcomingEvents = events
+        .filter(event => new Date(event.date) >= today) 
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(0, 5);
+
+    // generate calendar grid
+    const getCalendarDays = () => {
+        const days = [];
+        // Prev month empty days
+        for (let i = firstDayIndex; i > 0; i--) {
+            days.push({ day: daysInPrevMonth - i + 1, type: 'empty' });
+        }
+        // Current month days
+        for (let i = 1; i <= daysInMonth; i++) {
+            const currentDayDate = new Date(year, month, i);
+            const eventsOnDay = events.filter(e => {
+                const eDate = new Date(e.date);
+                return eDate.getFullYear() === currentDayDate.getFullYear() &&
+                       eDate.getMonth() === currentDayDate.getMonth() &&
+                       eDate.getDate() === currentDayDate.getDate();
+            });
+            days.push({ day: i, type: 'current', events: eventsOnDay });
+        }
+        return days;
+    };
+
+    const calendarDays = getCalendarDays();
+
+    // Colors for dots based on type
+    const getEventColor = (type) => {
+        switch(type) {
+            case 'Workshop': return '#3b82f6'; // blue
+            case 'Hackathon': return '#ec4899'; // pink
+            case 'Cultural': return '#f59e0b'; // amber
+            case 'Seminar': return '#8b5cf6'; // purple
+            default: return '#10b881'; // emerald
+        }
+    };
+
     return (
         <main>
             <style>{`
@@ -14,7 +96,7 @@ export default function Calendar() {
                 .upcoming-list { display: flex; flex-direction: column; gap: 1rem; }
                 .mini-event-card {
                     background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);
-                    border-left: 4px solid var(--primary-color); transition: transform 0.2s;
+                    border-left: 4px solid var(--primary-color); transition: transform 0.2s; cursor: default;
                 }
                 .mini-event-card:hover { transform: translateX(5px); background: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
                 .mini-date { font-size: 0.8rem; color: var(--primary-color); font-weight: 600; margin-bottom: 0.25rem; }
@@ -22,19 +104,20 @@ export default function Calendar() {
                 .calendar-main { padding: 2rem; }
                 .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
                 .month-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
+                .cal-actions { display: flex; gap: 0.5rem; }
+                .cal-btn { background: #f1f5f9; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; color: #333; }
+                .cal-btn:hover { background: #e2e8f0; }
                 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1rem; }
                 .cal-day-header { text-align: center; font-weight: 600; color: var(--text-muted); padding-bottom: 0.5rem; }
                 .cal-day {
                     aspect-ratio: 1; border-radius: 12px; border: 1px solid #f1f5f9; background: #f8fafc;
-                    padding: 0.5rem; position: relative; cursor: pointer; transition: all 0.2s;
+                    padding: 0.5rem; position: relative; transition: all 0.2s;
                 }
                 .cal-day:hover { border-color: var(--primary-color); background: #ffffff; }
-                .cal-day.active { background: #eff6ff; border-color: #3b82f6; }
+                .cal-day.active { background: #eff6ff; border-color: #3b82f6; cursor: pointer; }
                 .day-number { font-weight: 600; color: #1e293b; }
-                .day-event-dot {
-                    width: 6px; height: 6px; background: #3b82f6; border-radius: 50%;
-                    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-                }
+                .event-dots-container { display: flex; gap: 4px; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); }
+                .day-event-dot { width: 6px; height: 6px; border-radius: 50%; }
             `}</style>
 
             <section className="calendar-page-header mesh-gradient-2" style={{marginBottom: '2rem'}}>
@@ -49,27 +132,29 @@ export default function Calendar() {
                     <aside className="calendar-sidebar">
                         <h3 className="sidebar-title">Upcoming</h3>
                         <div className="upcoming-list">
-                            <div className="mini-event-card">
-                                <div className="mini-date">Feb 4</div>
-                                <div className="mini-title">Water Contamination Detection</div>
-                            </div>
-                            <div className="mini-event-card" style={{borderLeftColor: '#ec4899'}}>
-                                <div className="mini-date">Feb 7</div>
-                                <div className="mini-title">Payload Party Hackathon</div>
-                            </div>
-                            <div className="mini-event-card" style={{borderLeftColor: '#8b5cf6'}}>
-                                <div className="mini-date">Feb 14</div>
-                                <div className="mini-title">Kavya Sangam Poetry</div>
-                            </div>
+                            {loading ? (
+                                <p style={{color: '#64748b'}}>Loading events...</p>
+                            ) : upcomingEvents.length > 0 ? (
+                                upcomingEvents.map(event => (
+                                    <div key={event._id} className="mini-event-card" style={{borderLeftColor: getEventColor(event.type)}}>
+                                        <div className="mini-date" style={{color: getEventColor(event.type)}}>
+                                            {new Date(event.date).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}
+                                        </div>
+                                        <div className="mini-title">{event.title}</div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p style={{color: '#64748b'}}>No upcoming events.</p>
+                            )}
                         </div>
                     </aside>
 
                     <div className="calendar-main">
                         <div className="cal-header">
-                            <h2 className="month-title">February 2026</h2>
+                            <h2 className="month-title">{monthNames[month]} {year}</h2>
                             <div className="cal-actions">
-                                <button className="btn btn-outline btn-sm">&lt;</button>
-                                <button className="btn btn-outline btn-sm">&gt;</button>
+                                <button className="cal-btn" onClick={prevMonth}>&lt;</button>
+                                <button className="cal-btn" onClick={nextMonth}>&gt;</button>
                             </div>
                         </div>
                         <div className="cal-grid" id="calendar-grid">
@@ -81,55 +166,24 @@ export default function Calendar() {
                             <div className="cal-day-header">Fri</div>
                             <div className="cal-day-header">Sat</div>
 
-                            {/* Empty Days */}
-                            <div className="cal-day" style={{opacity: 0.3}}>29</div>
-                            <div className="cal-day" style={{opacity: 0.3}}>30</div>
-                            <div className="cal-day" style={{opacity: 0.3}}>31</div>
-
-                            {/* Feb 1-7 */}
-                            <div className="cal-day"><div className="day-number">1</div></div>
-                            <div className="cal-day"><div className="day-number">2</div></div>
-                            <div className="cal-day"><div className="day-number">3</div></div>
-                            <div className="cal-day active">
-                                <div className="day-number">4</div>
-                                <div className="day-event-dot"></div>
-                            </div>
-                            <div className="cal-day"><div className="day-number">5</div></div>
-                            <div className="cal-day"><div className="day-number">6</div></div>
-                            <div className="cal-day active">
-                                <div className="day-number">7</div>
-                                <div className="day-event-dot" style={{background: '#ec4899'}}></div>
-                            </div>
-
-                            {/* Feb 8-14 */}
-                            <div className="cal-day"><div className="day-number">8</div></div>
-                            <div className="cal-day"><div className="day-number">9</div></div>
-                            <div className="cal-day"><div className="day-number">10</div></div>
-                            <div className="cal-day"><div className="day-number">11</div></div>
-                            <div className="cal-day"><div className="day-number">12</div></div>
-                            <div className="cal-day"><div className="day-number">13</div></div>
-                            <div className="cal-day active">
-                                <div className="day-number">14</div>
-                                <div className="day-event-dot" style={{background: '#8b5cf6'}}></div>
-                            </div>
-
-                            {/* Feb 15-21 */}
-                            <div className="cal-day"><div className="day-number">15</div></div>
-                            <div className="cal-day"><div className="day-number">16</div></div>
-                            <div className="cal-day"><div className="day-number">17</div></div>
-                            <div className="cal-day"><div className="day-number">18</div></div>
-                            <div className="cal-day"><div className="day-number">19</div></div>
-                            <div className="cal-day"><div className="day-number">20</div></div>
-                            <div className="cal-day"><div className="day-number">21</div></div>
-
-                            {/* Feb 22-28 */}
-                            <div className="cal-day"><div className="day-number">22</div></div>
-                            <div className="cal-day"><div className="day-number">23</div></div>
-                            <div className="cal-day"><div className="day-number">24</div></div>
-                            <div className="cal-day"><div className="day-number">25</div></div>
-                            <div className="cal-day"><div className="day-number">26</div></div>
-                            <div className="cal-day"><div className="day-number">27</div></div>
-                            <div className="cal-day"><div className="day-number">28</div></div>
+                            {calendarDays.map((calDay, index) => (
+                                <div 
+                                    key={index} 
+                                    className={`cal-day ${calDay.events && calDay.events.length > 0 ? 'active' : ''}`} 
+                                    style={{opacity: calDay.type === 'empty' ? 0.3 : 1}}
+                                    title={calDay.events && calDay.events.length > 0 ? calDay.events.map(e => e.title).join(', ') : ''}
+                                >
+                                    <div className="day-number">{calDay.day}</div>
+                                    {calDay.events && calDay.events.length > 0 && (
+                                        <div className="event-dots-container">
+                                            {calDay.events.slice(0, 3).map((e, idx) => (
+                                                <div key={idx} className="day-event-dot" style={{background: getEventColor(e.type)}}></div>
+                                            ))}
+                                            {calDay.events.length > 3 && <span style={{fontSize:'8px', color:'#94a3b8', lineHeight:'6px'}}>+</span>}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>

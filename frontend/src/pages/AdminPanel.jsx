@@ -15,12 +15,15 @@ export default function AdminPanel() {
     const [location, setLocation] = useState('');
     const [type, setType] = useState('Workshop');
     const [imageUrl, setImageUrl] = useState('');
+    const [capacity, setCapacity] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [editEventId, setEditEventId] = useState(null);
+    const [showReport, setShowReport] = useState(false);
 
     const fetchEvents = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/events');
+            const { data } = await axios.get('/api/events');
             setEvents(data);
         } catch (error) {
             console.error("Failed to fetch events", error);
@@ -31,27 +34,45 @@ export default function AdminPanel() {
         fetchEvents();
     }, []);
 
-    const handleCreateEvent = async (e) => {
+    const handleSubmitEvent = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.post('http://localhost:5000/api/events', { title, description, date, location, type, capacity, imageUrl }, config);
+            const eventData = { title, description, date, location, type, capacity, imageUrl };
+            if (editEventId) {
+                await axios.put(`/api/events/${editEventId}`, eventData, config);
+            } else {
+                await axios.post('/api/events', eventData, config);
+            }
             setShowForm(false);
-            setTitle(''); setDescription(''); setDate(''); setLocation(''); setImageUrl('');
+            setEditEventId(null);
+            setTitle(''); setDescription(''); setDate(''); setLocation(''); setImageUrl(''); setCapacity('');
             fetchEvents();
         } catch (error) {
             console.error(error);
-            alert("Error creating event");
+            alert("Error saving event");
         }
         setLoading(false);
+    };
+
+    const handleEditClick = (event) => {
+        setEditEventId(event._id);
+        setTitle(event.title);
+        setDescription(event.description);
+        setDate(event.date ? new Date(event.date).toISOString().split('T')[0] : '');
+        setLocation(event.location);
+        setType(event.type);
+        setCapacity(event.capacity || '');
+        setImageUrl(event.imageUrl || '');
+        setShowForm(true);
     };
 
     const handleDelete = async (id) => {
         if(window.confirm("Are you sure you want to delete this event?")) {
             try {
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
-                await axios.delete(`http://localhost:5000/api/events/${id}`, config);
+                await axios.delete(`/api/events/${id}`, config);
                 fetchEvents();
             } catch (error) {
                 console.error(error);
@@ -103,14 +124,20 @@ export default function AdminPanel() {
                             <h3 style={{ color: '#1e293b', marginBottom: '1.25rem', fontSize: '1.15rem', fontWeight: 700 }}>Management</h3>
                             
                             <div style={{ display: 'grid', gap: '0.75rem' }}>
-                                <button onClick={() => setShowForm(!showForm)} style={{ padding: '0.85rem 1rem', background: showForm ? '#f8fafc' : 'linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%)', color: showForm ? '#64748b' : '#4338ca', border: showForm ? '1px solid #cbd5e1' : 'none', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 600, display: 'flex', alignItems: 'center', transition: 'all 0.2s', boxShadow: showForm ? 'none' : '0 4px 6px -1px rgba(79, 70, 229, 0.1)' }}>
+                                <button onClick={() => {
+                                    setShowForm(!showForm);
+                                    if(showForm) {
+                                        setEditEventId(null);
+                                        setTitle(''); setDescription(''); setDate(''); setLocation(''); setImageUrl(''); setCapacity('');
+                                    }
+                                }} style={{ padding: '0.85rem 1rem', background: showForm ? '#f8fafc' : 'linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%)', color: showForm ? '#64748b' : '#4338ca', border: showForm ? '1px solid #cbd5e1' : 'none', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 600, display: 'flex', alignItems: 'center', transition: 'all 0.2s', boxShadow: showForm ? 'none' : '0 4px 6px -1px rgba(79, 70, 229, 0.1)' }}>
                                     <span style={{ fontSize: '1.2rem', marginRight: '0.75rem' }}>{showForm ? '❌' : '✨'}</span>
-                                    {showForm ? 'Cancel Creation' : 'Create New Event'}
+                                    {showForm ? 'Cancel' : 'Create New Event'}
                                 </button>
-                                <button style={{ padding: '0.85rem 1rem', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                                <button style={{ padding: '0.85rem 1rem', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 600, display: 'flex', alignItems: 'center' }} onClick={() => alert("User Management coming soon!")}>
                                     <span style={{ fontSize: '1.2rem', marginRight: '0.75rem' }}>👥</span> Manage Users
                                 </button>
-                                <button style={{ padding: '0.85rem 1rem', background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+                                <button onClick={() => setShowReport(!showReport)} style={{ padding: '0.85rem 1rem', background: showReport ? '#e0e7ff' : '#f8fafc', color: showReport ? '#4338ca' : '#475569', border: '1px solid #e2e8f0', borderRadius: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 600, display: 'flex', alignItems: 'center' }}>
                                     <span style={{ fontSize: '1.2rem', marginRight: '0.75rem' }}>📊</span> Reports
                                 </button>
                             </div>
@@ -118,8 +145,8 @@ export default function AdminPanel() {
 
                         {showForm && (
                             <div style={{ background: '#fff', padding: '1.75rem', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e0e7ff' }}>
-                                <h3 style={{ color: '#1e293b', marginBottom: '1.25rem', fontSize: '1.1rem' }}>Event Details</h3>
-                                <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <h3 style={{ color: '#1e293b', marginBottom: '1.25rem', fontSize: '1.1rem' }}>{editEventId ? 'Edit Event' : 'Event Details'}</h3>
+                                <form onSubmit={handleSubmitEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     <div>
                                         <label className="form-label">Event Title</label>
                                         <input type="text" placeholder="e.g. CodeFest 2026" className="input-field" value={title} onChange={(e) => setTitle(e.target.value)} required />
@@ -160,7 +187,7 @@ export default function AdminPanel() {
                                         </div>
                                     </div>
                                     <button type="submit" disabled={loading} style={{ marginTop: '0.5rem', padding: '0.85rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)', transition: 'all 0.2s' }}>
-                                        {loading ? 'Processing...' : 'Publish Event'}
+                                        {loading ? 'Processing...' : (editEventId ? 'Update Event' : 'Publish Event')}
                                     </button>
                                 </form>
                             </div>
@@ -208,6 +235,9 @@ export default function AdminPanel() {
                                                     </span>
                                                 </td>
                                                 <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                                                    <button onClick={() => handleEditClick(event)} style={{ background: 'transparent', color: '#4f46e5', border: '1px solid transparent', padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', marginRight: '0.5rem' }} onMouseEnter={(e)=>e.target.style.background='#e0e7ff'} onMouseLeave={(e)=>e.target.style.background='transparent'}>
+                                                        Edit
+                                                    </button>
                                                     <button onClick={() => handleDelete(event._id)} style={{ background: 'transparent', color: '#ef4444', border: '1px solid transparent', padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e)=>e.target.style.background='#fee2e2'} onMouseLeave={(e)=>e.target.style.background='transparent'}>
                                                         Remove
                                                     </button>
@@ -216,6 +246,25 @@ export default function AdminPanel() {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
+                        
+                        {/* Reports Section */}
+                        {showReport && (
+                            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', borderRadius: '16px', border: '1px solid #cbd5e1' }}>
+                                <h3 style={{ color: '#1e293b', marginBottom: '1rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center' }}><span style={{marginRight: '0.5rem'}}>📈</span> Quick Reports</h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div style={{ background: 'white', padding: '1rem', borderRadius: '10px', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#4f46e5' }}>{events.length}</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Total Events</div>
+                                    </div>
+                                    <div style={{ background: 'white', padding: '1rem', borderRadius: '10px', textAlign: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                        <div style={{ fontSize: '2rem', fontWeight: 800, color: '#10b981' }}>
+                                            {events.reduce((acc, ev) => acc + (ev.registeredStudents?.length || 0), 0)}
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Total Registrations</div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

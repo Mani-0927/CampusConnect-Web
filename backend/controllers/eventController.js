@@ -1,5 +1,6 @@
 const Event = require('../models/Event');
 const User = require('../models/User');
+const sendEmail = require('../utils/sendEmail');
 
 const getEvents = async (req, res) => {
     try {
@@ -24,6 +25,26 @@ const createEvent = async (req, res) => {
             imageUrl
         });
 
+        // Broadcast email to all users silently
+        try {
+            const users = await User.find({}, 'email name');
+            const emailPromises = users.map(user => {
+                const message = `Hello ${user.name},\n\nA new event "${title}" has been added to CampusConnect! It is scheduled for ${new Date(date).toLocaleDateString()} at ${location}.\n\nCheck it out and register on the platform.`;
+                const htmlStr = `<p>Hello ${user.name},</p><p>A new event "<strong>${title}</strong>" has been added to CampusConnect!</p><ul><li><strong>Date:</strong> ${new Date(date).toLocaleDateString()}</li><li><strong>Location:</strong> ${location}</li></ul><p>Check it out and register on the platform!</p>`;
+                
+                return sendEmail({
+                    email: user.email,
+                    subject: `New Event Alert: ${title}`,
+                    message: message,
+                    html: htmlStr
+                });
+            });
+            // We do not await this so the API response isn't blocked
+            Promise.all(emailPromises).catch(err => console.error('Email broadcast failed:', err));
+        } catch (emailErr) {
+            console.error('Error fetching users for email broadcast:', emailErr);
+        }
+
         res.status(201).json(event);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -42,6 +63,24 @@ const deleteEvent = async (req, res) => {
         res.status(200).json({ id: req.params.id });
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+const updateEvent = async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+        if(!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+        
+        const updatedEvent = await Event.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+        res.status(200).json(updatedEvent);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
     }
 };
 
@@ -101,6 +140,7 @@ module.exports = {
     getEvents,
     createEvent,
     deleteEvent,
+    updateEvent,
     registerForEvent,
     getMyEvents
 };

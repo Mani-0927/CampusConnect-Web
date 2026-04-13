@@ -12,7 +12,7 @@ export default function UserPanel() {
         const fetchMyEvents = async () => {
             try {
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
-                const { data } = await axios.get('http://localhost:5000/api/events/myevents', config);
+                const { data } = await axios.get('/api/events/myevents', config);
                 setMyEvents(data);
             } catch (error) {
                 console.error("Failed to fetch user events", error);
