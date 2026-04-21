@@ -15,5 +15,4 @@ const otpSchema = new mongoose.Schema({
         expires: 300 // The document will be automatically deleted after 5 minutes
     }
 });
-
 module.exports = mongoose.model('OTP', otpSchema);

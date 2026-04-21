@@ -4,11 +4,10 @@ export default function Contact() {
     return (
         <main>
             <div className="contact-hero mesh-gradient-3"
-                style={{padding: '6rem 0 8rem', textAlign: 'center', color: 'white', marginBottom: '-4rem', position: 'relative'}}>
-                <div style={{position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.3)', zIndex: 1}}></div>
+                style={{padding: '6rem 0 8rem', textAlign: 'center', marginBottom: '-4rem', position: 'relative'}}>
                 <div className="container" style={{position: 'relative', zIndex: 2}}>
-                    <h1 style={{fontSize: '3rem', marginBottom: '1rem', color: '#fce7f3'}}>Get in Touch</h1>
-                    <p style={{fontSize: '1.2rem', color: '#fbcfe8'}}>Have questions? We'd love to hear from you.</p>
+                    <h1 style={{fontSize: '3rem', marginBottom: '1rem', color: 'var(--text-main)'}}>Get in Touch</h1>
+                    <p style={{fontSize: '1.2rem', color: 'var(--text-muted)'}}>Have questions? We'd love to hear from you.</p>
                 </div>
             </div>
 

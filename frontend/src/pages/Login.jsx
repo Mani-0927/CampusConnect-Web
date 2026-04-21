@@ -7,6 +7,7 @@ export default function Login() {
     const { login } = useContext(AuthContext);
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
 
     const handleLogin = async (e) => {
@@ -31,7 +32,7 @@ export default function Login() {
                     <h2>Welcome Back</h2>
                     <p>Login to access your dashboard</p>
                 </div>
-                {error && <div style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+                {error && <div style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>{error}</div>}
                 <form onSubmit={handleLogin}>
                     <div className="form-group">
                         <label>Email or Mobile Number</label>
@@ -39,7 +40,24 @@ export default function Login() {
                     </div>
                     <div className="form-group">
                         <label>Password</label>
-                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="form-control" placeholder="••••••••" required />
+                        <div className="password-input-wrapper">
+                            <input 
+                                type={showPassword ? 'text' : 'password'} 
+                                value={password} 
+                                onChange={(e) => setPassword(e.target.value)} 
+                                className="form-control" 
+                                placeholder="••••••••" 
+                                required 
+                            />
+                            <button 
+                                type="button" 
+                                className="eye-icon-btn" 
+                                onClick={() => setShowPassword(!showPassword)}
+                                tabIndex="-1"
+                            >
+                                {showPassword ? '👁️' : '🔒'}
+                            </button>
+                        </div>
                     </div>
                     <button type="submit" className="btn-block">Sign In</button>
                 </form>

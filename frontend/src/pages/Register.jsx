@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import PasswordStrength from '../components/PasswordStrength';
 
 export default function Register() {
     const navigate = useNavigate();
@@ -10,12 +11,20 @@ export default function Register() {
     const [name, setName] = useState('');
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [otp, setOtp] = useState('');
     const [error, setError] = useState('');
 
     const handleSendOTP = async (e) => {
         e.preventDefault();
         setError('');
+        
+        // Basic requirement check
+        if (password.length < 8) {
+            setError('Password must be at least 8 characters long');
+            return;
+        }
+
         try {
             const config = { headers: { 'Content-Type': 'application/json' } };
             await axios.post('/api/auth/send-otp', { identifier }, config);
@@ -47,7 +56,7 @@ export default function Register() {
                     <h2>Create Account</h2>
                     <p>Join CampusConnect today</p>
                 </div>
-                {error && <div style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
+                {error && <div style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>{error}</div>}
                 {step === 1 ? (
                     <form onSubmit={handleSendOTP}>
                         <div className="form-group">
@@ -58,9 +67,27 @@ export default function Register() {
                             <label>Email or Mobile Number</label>
                             <input value={identifier} onChange={(e) => setIdentifier(e.target.value)} type="text" className="form-control" placeholder="student@gla.ac.in or 9876543210" required />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group" style={{ marginBottom: '2rem' }}>
                             <label>Password</label>
-                            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" className="form-control" placeholder="••••••••" required />
+                            <div className="password-input-wrapper">
+                                <input 
+                                    value={password} 
+                                    onChange={(e) => setPassword(e.target.value)} 
+                                    type={showPassword ? 'text' : 'password'} 
+                                    className="form-control" 
+                                    placeholder="••••••••" 
+                                    required 
+                                />
+                                <button 
+                                    type="button" 
+                                    className="eye-icon-btn" 
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    tabIndex="-1"
+                                >
+                                    {showPassword ? '👁️' : '🔒'}
+                                </button>
+                            </div>
+                            {password && <PasswordStrength password={password} />}
                         </div>
                         <button type="submit" className="btn-block">Send OTP</button>
                     </form>

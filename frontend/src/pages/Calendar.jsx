@@ -86,44 +86,44 @@ export default function Calendar() {
             <style>{`
                 .calendar-page-header { padding: 4rem 0 2rem; text-align: center; }
                 .calendar-wrapper {
-                    background: white; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
-                    overflow: hidden; border: 1px solid rgba(0, 0, 0, 0.05); display: grid;
+                    background: #0f172a; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                    overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); display: grid;
                     grid-template-columns: 350px 1fr; min-height: 600px;
                 }
                 @media (max-width: 900px) { .calendar-wrapper { grid-template-columns: 1fr; } }
-                .calendar-sidebar { background: #ffffff; padding: 2rem; border-right: 1px solid var(--border-color); }
-                .sidebar-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; color: #1e293b; }
+                .calendar-sidebar { background: #1e293b; padding: 2rem; border-right: 1px solid rgba(255, 255, 255, 0.1); }
+                .sidebar-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; color: #f1f5f9; }
                 .upcoming-list { display: flex; flex-direction: column; gap: 1rem; }
                 .mini-event-card {
-                    background: #f8fafc; padding: 1rem; border-radius: 12px; border: 1px solid var(--border-color);
+                    background: #334155; padding: 1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);
                     border-left: 4px solid var(--primary-color); transition: transform 0.2s; cursor: default;
                 }
-                .mini-event-card:hover { transform: translateX(5px); background: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
+                .mini-event-card:hover { transform: translateX(5px); background: #475569; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); }
                 .mini-date { font-size: 0.8rem; color: var(--primary-color); font-weight: 600; margin-bottom: 0.25rem; }
-                .mini-title { font-weight: 600; color: #1e293b; font-size: 0.95rem; }
-                .calendar-main { padding: 2rem; }
+                .mini-title { font-weight: 600; color: #f1f5f9; font-size: 0.95rem; }
+                .calendar-main { padding: 2rem; background: #0f172a; }
                 .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-                .month-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; }
+                .month-title { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; }
                 .cal-actions { display: flex; gap: 0.5rem; }
-                .cal-btn { background: #f1f5f9; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; color: #333; }
-                .cal-btn:hover { background: #e2e8f0; }
+                .cal-btn { background: #334155; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: bold; color: #f1f5f9; }
+                .cal-btn:hover { background: #475569; }
                 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1rem; }
-                .cal-day-header { text-align: center; font-weight: 600; color: var(--text-muted); padding-bottom: 0.5rem; }
+                .cal-day-header { text-align: center; font-weight: 600; color: #94a3b8; padding-bottom: 0.5rem; }
                 .cal-day {
-                    aspect-ratio: 1; border-radius: 12px; border: 1px solid #f1f5f9; background: #f8fafc;
+                    aspect-ratio: 1; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); background: #1e293b;
                     padding: 0.5rem; position: relative; transition: all 0.2s;
                 }
-                .cal-day:hover { border-color: var(--primary-color); background: #ffffff; }
-                .cal-day.active { background: #eff6ff; border-color: #3b82f6; cursor: pointer; }
-                .day-number { font-weight: 600; color: #1e293b; }
+                .cal-day:hover { border-color: var(--primary-color); background: #334155; }
+                .cal-day.active { background: #1e293b; border-color: var(--primary-color); cursor: pointer; border-width: 2px; }
+                .day-number { font-weight: 600; color: #f1f5f9; }
                 .event-dots-container { display: flex; gap: 4px; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); }
                 .day-event-dot { width: 6px; height: 6px; border-radius: 50%; }
             `}</style>
 
             <section className="calendar-page-header mesh-gradient-2" style={{marginBottom: '2rem'}}>
                 <div className="container">
-                    <h1 style={{color: '#e0e7ff'}}>Event Schedule</h1>
-                    <p style={{color: '#c7d2fe'}}>Don't miss out on what's happening this month.</p>
+                    <h1 style={{color: 'var(--text-main)'}}>Event Schedule</h1>
+                    <p style={{color: 'var(--text-muted)'}}>Don't miss out on what's happening this month.</p>
                 </div>
             </section>
 
